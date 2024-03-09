@@ -1,0 +1,52 @@
+import React, { useState } from "react";
+import { useQuery } from "react-query";
+import { CategoryApi } from "../category.api";
+import { PaginationState, SortingState } from "@tanstack/react-table";
+
+const useCategoriesData = () => {
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+  const [sortState, setSortState] = useState<SortingState>([]);
+  const [keyword, setKeyword] = useState<string>();
+  const [totalRows, setTotalRows] = useState<number>(0);
+  const [filter, setFilter] = useState({});
+  const fetchProductDataFunction = async () => {
+    try {
+      const response = await CategoryApi.getAll({
+        paging: pagination, // Pass the pagination state
+        sort: sortState, // Pass the sort state
+        keyword, // Pass the keyword
+      });
+      console.log(response);
+
+      setTotalRows(response?.data?.totalCount ?? 0);
+      // Return the data from the response
+      return response?.data?.data ?? [];
+      // return []
+    } catch (e) {
+      console.log(e);
+      throw e;
+    }
+  };
+
+  // TODO: use debounce technique to prevent many calls at a short time
+  const queryKey = ["cars", pagination, sortState, keyword];
+
+  const query = useQuery(queryKey, fetchProductDataFunction, {
+    onError: (err) => console.log("error at hook", err),
+  });
+
+  return {
+    ...query,
+    setSortState,
+    setKeyword,
+    setPagination,
+    setFilter,
+    keyword,
+    totalRows,
+  };
+};
+
+export default useCategoriesData;
